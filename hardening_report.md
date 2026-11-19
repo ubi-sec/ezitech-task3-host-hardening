@@ -58,3 +58,20 @@ PORT     STATE SERVICE VERSION
 22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.18 (Ubuntu Linux; protocol 2.0)
 3000/tcp open  ppp?    (Fingerprint confirms: HTTP/1.1 200 OK, OWASP Juice Shop)
 Conclusion: The attack surface has been successfully minimized. Only the required services (SSH for administration and Port 3000 for the business application) are exposed. All other 65,533 ports are filtered or closed.
+---
+
+## 4. Docker Network Hardening (UFW Bypass Mitigation)
+
+### The Issue
+By default, Docker manipulates `iptables` directly to create DNAT rules for published ports (e.g., `-p 3000:3000`). These rules are evaluated *before* UFW rules, meaning UFW cannot effectively block traffic to a published Docker port from the external network.
+
+### Remediation Applied
+Instead of merely stopping the container (which is an operational workaround), I implemented a configuration hardening measure by binding the container exclusively to the localhost interface. 
+
+**Implementation:**
+The Docker run command (or docker-compose configuration) was updated to:
+```bash
+docker run -p 127.0.0.1:3000:3000 -d bkimminich/juice-shop
+(Note: For this lab validation, the port remains accessible locally for testing, but external direct access is now blocked at the Docker daemon level, perfectly complementing the UFW default-deny policy).
+SSH Key-Based Authentication Confirmation
+Remote access is strictly enforced via key-based authentication. The Vagrant environment inherently uses SSH keys. By setting PasswordAuthentication no, password-based brute-force attacks are definitively mitigated.
